@@ -1,4 +1,4 @@
-package com.terrylinla.rnsketchcanvas;
+package com.yg.rnsketchcanvas;
 
 import android.util.Log;
 

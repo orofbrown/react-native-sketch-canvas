@@ -1,285 +1,263 @@
-import React from 'react'
-import PropTypes from 'prop-types'
+// @flow
+
+import React, { useEffect, useState, useRef } from "react";
 import ReactNative, {
-  View,
+  FlatList,
   Text,
   TouchableOpacity,
-  FlatList,
-  ViewPropTypes,
-} from 'react-native'
-import SketchCanvas from './src/SketchCanvas'
-import { requestPermissions } from './src/handlePermissions';
+  View,
+} from "react-native";
+import SketchCanvas from "./src/SketchCanvas";
+import { requestPermissions } from "./src/handlePermissions";
+import { STROKE_COLORS } from "./src/constants";
+import type { RNCanvasProps as Props } from "./src/types";
 
-export default class RNSketchCanvas extends React.Component {
-  static propTypes = {
-    containerStyle: ViewPropTypes.style,
-    canvasStyle: ViewPropTypes.style,
-    onStrokeStart: PropTypes.func,
-    onStrokeChanged: PropTypes.func,
-    onStrokeEnd: PropTypes.func,
-    onClosePressed: PropTypes.func,
-    onUndoPressed: PropTypes.func,
-    onClearPressed: PropTypes.func,
-    onPathsChange: PropTypes.func,
-    user: PropTypes.string,
+export default function RNSketchCanvas({
+  alphaValues = ["33", "77", "AA", "FF"],
+  defaultStrokeIndex = 0,
+  defaultStrokeWidth = 3,
+  localSourceImage = null,
+  maxStrokeWidth = 15,
+  minStrokeWidth = 3,
+  permissionDialogMessage = "",
+  permissionDialogTitle = "",
+  savePreference = null,
+  strokeColors = STROKE_COLORS,
+  strokeWidthStep: strokeWidthStepProp = 3,
+  text = null,
+  user = null,
 
-    closeComponent: PropTypes.node,
-    eraseComponent: PropTypes.node,
-    undoComponent: PropTypes.node,
-    clearComponent: PropTypes.node,
-    saveComponent: PropTypes.node,
-    strokeComponent: PropTypes.func,
-    strokeSelectedComponent: PropTypes.func,
-    strokeWidthComponent: PropTypes.func,
+  canvasStyle = null,
+  containerStyle = null,
 
-    strokeColors: PropTypes.arrayOf(PropTypes.shape({ color: PropTypes.string })),
-    defaultStrokeIndex: PropTypes.number,
-    defaultStrokeWidth: PropTypes.number,
+  clearComponent: ClearComponent = null,
+  closeComponent: CloseComponent = null,
+  eraseComponent: EraseComponent = null,
+  saveComponent: SaveComponent = null,
+  strokeComponent: StrokeComponent = null,
+  strokeSelectedComponent: StrokeSelectedComponent = null,
+  strokeWidthComponent: StrokeWidthComponent = null,
+  undoComponent: UndoComponent = null,
 
-    minStrokeWidth: PropTypes.number,
-    maxStrokeWidth: PropTypes.number,
-    strokeWidthStep: PropTypes.number,
+  onClearPressed,
+  onClosePressed,
+  onPathsChange,
+  onStrokeStart,
+  onStrokeChanged,
+  onStrokeEnd,
+  onSketchSaved,
+  onUndoPressed,
+}: Props): React$Element<*> {
+  const [alpha, setAlpha] = useState(alphaValues[3]);
+  const [alphaStep, setAlphaStep] = useState(-1);
+  const [color, setColor] = useState(strokeColors[defaultStrokeIndex].color);
+  const [colorChanged, setColorChanged] = useState(false);
+  const [strokeWidth, setStrokeWidth] = useState(defaultStrokeWidth);
+  const [strokeWidthStep, setStrokeWidthStep] = useState(strokeWidthStepProp);
+  const [hasFilePermissions, setHasFilePermissions] = useState(false);
+  const sketchCanvasRef = useRef();
 
-    savePreference: PropTypes.func,
-    onSketchSaved: PropTypes.func,
-
-    text: PropTypes.arrayOf(PropTypes.shape({
-      text: PropTypes.string,
-      font: PropTypes.string,
-      fontSize: PropTypes.number,
-      fontColor: PropTypes.string,
-      overlay: PropTypes.oneOf(['TextOnSketch', 'SketchOnText']),
-      anchor: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
-      position: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
-      coordinate: PropTypes.oneOf(['Absolute', 'Ratio']),
-      alignment: PropTypes.oneOf(['Left', 'Center', 'Right']),
-      lineHeightMultiple: PropTypes.number,
-    })),
-    localSourceImage: PropTypes.shape({ filename: PropTypes.string, directory: PropTypes.string, mode: PropTypes.string }),
-
-    permissionDialogTitle: PropTypes.string,
-    permissionDialogMessage: PropTypes.string,
-  };
-
-  static defaultProps = {
-    containerStyle: null,
-    canvasStyle: null,
-    onStrokeStart: () => { },
-    onStrokeChanged: () => { },
-    onStrokeEnd: () => { },
-    onClosePressed: () => { },
-    onUndoPressed: () => { },
-    onClearPressed: () => { },
-    onPathsChange: () => { },
-    user: null,
-
-    closeComponent: null,
-    eraseComponent: null,
-    undoComponent: null,
-    clearComponent: null,
-    saveComponent: null,
-    strokeComponent: null,
-    strokeSelectedComponent: null,
-    strokeWidthComponent: null,
-
-    strokeColors: [
-      { color: '#000000' },
-      { color: '#FF0000' },
-      { color: '#00FFFF' },
-      { color: '#0000FF' },
-      { color: '#0000A0' },
-      { color: '#ADD8E6' },
-      { color: '#800080' },
-      { color: '#FFFF00' },
-      { color: '#00FF00' },
-      { color: '#FF00FF' },
-      { color: '#FFFFFF' },
-      { color: '#C0C0C0' },
-      { color: '#808080' },
-      { color: '#FFA500' },
-      { color: '#A52A2A' },
-      { color: '#800000' },
-      { color: '#008000' },
-      { color: '#808000' }],
-    alphlaValues: ['33', '77', 'AA', 'FF'],
-    defaultStrokeIndex: 0,
-    defaultStrokeWidth: 3,
-
-    minStrokeWidth: 3,
-    maxStrokeWidth: 15,
-    strokeWidthStep: 3,
-
-    savePreference: null,
-    onSketchSaved: () => { },
-
-    text: null,
-    localSourceImage: null,
-
-    permissionDialogTitle: '',
-    permissionDialogMessage: '',
-  };
-
-
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      color: props.strokeColors[props.defaultStrokeIndex].color,
-      strokeWidth: props.defaultStrokeWidth,
-      alpha: 'FF'
-    }
-
-    this._colorChanged = false
-    this._strokeWidthStep = props.strokeWidthStep
-    this._alphaStep = -1
+  function clear() {
+    sketchCanvasRef.current?.clear();
+  }
+  function undo() {
+    return sketchCanvasRef.current?.undo() || -1;
+  }
+  function addPath(data) {
+    sketchCanvasRef.current?.addPath(data);
+  }
+  function deletePath(id) {
+    sketchCanvasRef.current?.deletePath(id);
+  }
+  function getFileName() {
+    const date = new Date();
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${(
+      "0" + date.getDate()
+    ).slice(-2)} ${("0" + date.getHours()).slice(-2)}-${(
+      "0" + date.getMinutes()
+    ).slice(-2)}-
+${("0" + date.getSeconds()).slice(-2)}`;
   }
 
-  clear() {
-    this._sketchCanvas.clear()
-  }
-
-  undo() {
-    return this._sketchCanvas.undo()
-  }
-
-  addPath(data) {
-    this._sketchCanvas.addPath(data)
-  }
-
-  deletePath(id) {
-    this._sketchCanvas.deletePath(id)
-  }
-
-  save() {
-    if (this.props.savePreference) {
-      const p = this.props.savePreference()
-      this._sketchCanvas.save(p.imageType, p.transparent, p.folder ? p.folder : '', p.filename, p.includeImage !== false, p.includeText !== false, p.cropToImageSize || false)
+  function save() {
+    if (savePreference) {
+      const p = savePreference();
+      sketchCanvasRef.current?.save(
+        p.imageType,
+        p.transparent,
+        p.folder ? p.folder : "",
+        p.filename,
+        p.includeImage !== false,
+        p.includeText !== false,
+        p.cropToImageSize || false
+      );
     } else {
-      const date = new Date()
-      this._sketchCanvas.save('png', false, '', 
-        date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + '-' + ('0' + date.getMinutes()).slice(-2) + '-' + ('0' + date.getSeconds()).slice(-2),
-        true, true, false)
+      sketchCanvasRef.current?.save(
+        "png",
+        false,
+        "",
+        getFileName(),
+        true,
+        true,
+        false
+      );
     }
   }
 
-  nextStrokeWidth() {
-    if ((this.state.strokeWidth >= this.props.maxStrokeWidth && this._strokeWidthStep > 0) ||
-      (this.state.strokeWidth <= this.props.minStrokeWidth && this._strokeWidthStep < 0))
-      this._strokeWidthStep = -this._strokeWidthStep
-    this.setState({ strokeWidth: this.state.strokeWidth + this._strokeWidthStep })
+  function nextStrokeWidth() {
+    setStrokeWidth((prev) => {
+      const prevSize = typeof prev === "number" ? prev : 1;
+      const newSize =
+        prevSize + strokeWidthStep >= maxStrokeWidth
+          ? 1
+          : prevSize + strokeWidthStep;
+      setStrokeWidth(newSize);
+      return newSize;
+    });
   }
 
-  _renderItem = ({ item, index }) => (
-    <TouchableOpacity style={{ marginHorizontal: 2.5 }} onPress={() => {
-      if (this.state.color === item.color) {
-        const index = this.props.alphlaValues.indexOf(this.state.alpha)
-        if (this._alphaStep < 0) {
-          this._alphaStep = index === 0 ? 1 : -1
-          this.setState({ alpha: this.props.alphlaValues[index + this._alphaStep] })
+  const renderItem = ({ item, index }) => (
+    <TouchableOpacity
+      style={{ marginHorizontal: 2.5 }}
+      onPress={() => {
+        if (color === item.color) {
+          const index = alphaValues.indexOf(alpha);
+          if (alphaStep < 0) {
+            const step = index === 0 ? 1 : -1;
+            setAlphaStep(step);
+            setAlpha(alphaValues[index + step]);
+          } else {
+            const step = index === alphaValues.length - 1 ? -1 : 1;
+            setAlphaStep(step);
+            setAlpha(alphaValues[index + step]);
+          }
         } else {
-          this._alphaStep = index === this.props.alphlaValues.length - 1 ? -1 : 1
-          this.setState({ alpha: this.props.alphlaValues[index + this._alphaStep] })
+          setColor(item.color);
+          setColorChanged(true);
         }
-      } else {
-        this.setState({ color: item.color })
-        this._colorChanged = true
-      }
-    }}>
-      {this.state.color !== item.color && this.props.strokeComponent && this.props.strokeComponent(item.color)}
-      {this.state.color === item.color && this.props.strokeSelectedComponent && this.props.strokeSelectedComponent(item.color + this.state.alpha, index, this._colorChanged)}
-    </TouchableOpacity>
-  )
+      }}
+    >
+      {color !== item.color && StrokeComponent && (
+        <StrokeComponent color={item.color} />
+      )}
 
-  componentDidUpdate() {
-    this._colorChanged = false
-  }
-
-  async componentDidMount() {
-    const isStoragePermissionAuthorized = await requestPermissions(
-      this.props.permissionDialogTitle,
-      this.props.permissionDialogMessage,
-    );
-  }
-
-  render() {
-    return (
-      <View style={this.props.containerStyle}>
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'flex-start' }}>
-            {this.props.closeComponent && (
-              <TouchableOpacity onPress={() => { this.props.onClosePressed() }}>
-                {this.props.closeComponent}
-              </TouchableOpacity>)
-            }
-
-            {this.props.eraseComponent && (
-              <TouchableOpacity onPress={() => { this.setState({ color: '#00000000' }) }}>
-                {this.props.eraseComponent}
-              </TouchableOpacity>)
-            }
-          </View>
-          <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'flex-end' }}>
-            {this.props.strokeWidthComponent && (
-              <TouchableOpacity onPress={() => { this.nextStrokeWidth() }}>
-                {this.props.strokeWidthComponent(this.state.strokeWidth)}
-              </TouchableOpacity>)
-            }
-
-            {this.props.undoComponent && (
-              <TouchableOpacity onPress={() => { this.props.onUndoPressed(this.undo()) }}>
-                {this.props.undoComponent}
-              </TouchableOpacity>)
-            }
-
-            {this.props.clearComponent && (
-              <TouchableOpacity onPress={() => { this.clear(); this.props.onClearPressed() }}>
-                {this.props.clearComponent}
-              </TouchableOpacity>)
-            }
-
-            {this.props.saveComponent && (
-              <TouchableOpacity onPress={() => { this.save() }}>
-                {this.props.saveComponent}
-              </TouchableOpacity>)
-            }
-          </View>
-        </View>
-        <SketchCanvas
-          ref={ref => this._sketchCanvas = ref}
-          style={this.props.canvasStyle}
-          strokeColor={this.state.color + (this.state.color.length === 9 ? '' : this.state.alpha)}
-          onStrokeStart={this.props.onStrokeStart}
-          onStrokeChanged={this.props.onStrokeChanged}
-          onStrokeEnd={this.props.onStrokeEnd}
-          user={this.props.user}
-          strokeWidth={this.state.strokeWidth}
-          onSketchSaved={(success, path) => this.props.onSketchSaved(success, path)}
-          onPathsChange={this.props.onPathsChange}
-          text={this.props.text}
-          localSourceImage={this.props.localSourceImage}
-          permissionDialogTitle={this.props.permissionDialogTitle}
-          permissionDialogMessage={this.props.permissionDialogMessage}
+      {color === item.color && StrokeSelectedComponent && (
+        <StrokeSelectedComponent
+          color={item.color + alpha}
+          index={index}
+          colorChanged={colorChanged}
         />
-        <View style={{ flexDirection: 'row' }}>
-          <FlatList
-            data={this.props.strokeColors}
-            extraData={this.state}
-            keyExtractor={() => Math.ceil(Math.random() * 10000000).toString()}
-            renderItem={this._renderItem}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
+      )}
+    </TouchableOpacity>
+  );
+
+  useEffect(() => {
+    if (!hasFilePermissions) {
+      requestPermissions(
+        permissionDialogTitle,
+        permissionDialogMessage
+      ).then((granted) => setHasFilePermissions(granted));
+    }
+  }, []);
+
+  useEffect(() => {
+    setColorChanged(false);
+  });
+
+  return (
+    <View style={containerStyle}>
+      <View style={{ flexDirection: "row" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            flex: 1,
+            justifyContent: "flex-start",
+          }}
+        >
+          {CloseComponent && (
+            <TouchableOpacity onPress={onClosePressed}>
+              <CloseComponent />
+            </TouchableOpacity>
+          )}
+
+          {EraseComponent && (
+            <TouchableOpacity onPress={() => setColor("#00000000")}>
+              <EraseComponent />
+            </TouchableOpacity>
+          )}
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            flex: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          {StrokeWidthComponent && (
+            <TouchableOpacity onPress={nextStrokeWidth}>
+              <StrokeWidthComponent strokeWidth={strokeWidth} />
+            </TouchableOpacity>
+          )}
+          {UndoComponent && (
+            <TouchableOpacity onPress={() => onUndoPressed?.(undo())}>
+              <UndoComponent />
+            </TouchableOpacity>
+          )}
+          {ClearComponent && (
+            <TouchableOpacity
+              onPress={() => {
+                clear();
+                onClearPressed?.();
+              }}
+            >
+              <ClearComponent />
+            </TouchableOpacity>
+          )}
+
+          {SaveComponent && (
+            <TouchableOpacity onPress={save}>
+              <SaveComponent />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    );
-  }
-};
+      <SketchCanvas
+        ref={sketchCanvasRef}
+        style={canvasStyle}
+        strokeColor={`${color}${color.length === 9 ? "" : alpha}`}
+        onStrokeStart={onStrokeStart}
+        onStrokeChanged={onStrokeChanged}
+        onStrokeEnd={onStrokeEnd}
+        user={user}
+        strokeWidth={strokeWidth}
+        onSketchSaved={(success, path) => onSketchSaved?.(success, path)}
+        onPathsChange={onPathsChange}
+        text={text}
+        localSourceImage={localSourceImage}
+        permissionDialogTitle={permissionDialogTitle}
+        permissionDialogMessage={permissionDialogMessage}
+      />
+      <View style={{ flexDirection: "row" }}>
+        <FlatList
+          data={strokeColors}
+          extraData={{ alpha, color, strokeWidth }}
+          keyExtractor={() => Math.ceil(Math.random() * 10000000).toString()}
+          renderItem={renderItem}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+    </View>
+  );
+}
 
+// $FlowFixMe
 RNSketchCanvas.MAIN_BUNDLE = SketchCanvas.MAIN_BUNDLE;
+// $FlowFixMe
 RNSketchCanvas.DOCUMENT = SketchCanvas.DOCUMENT;
+// $FlowFixMe
 RNSketchCanvas.LIBRARY = SketchCanvas.LIBRARY;
+// $FlowFixMe
 RNSketchCanvas.CACHES = SketchCanvas.CACHES;
 
-export {
-  SketchCanvas
-}
+export { SketchCanvas };
