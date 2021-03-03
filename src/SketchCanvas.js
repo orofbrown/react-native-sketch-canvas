@@ -1,5 +1,5 @@
 // @flow
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import {
   NativeModules,
   PanResponder,
@@ -8,11 +8,11 @@ import {
   UIManager,
   processColor,
   requireNativeComponent,
-} from "react-native";
-import { requestPermissions } from "./handlePermissions";
-import type { SketchCanvasProps as Props } from "./types";
+} from 'react-native';
+import { requestPermissions } from './handlePermissions';
+import type { SketchCanvasProps as Props } from './types';
 
-const RNSketchCanvas = requireNativeComponent("RNSketchCanvas");
+const RNSketchCanvas = requireNativeComponent('RNSketchCanvas');
 const SketchCanvasManager = NativeModules.RNSketchCanvasManager || {};
 
 function SketchCanvas({
@@ -25,9 +25,9 @@ function SketchCanvas({
   onSketchSaved = () => {},
 
   localSourceImage = null,
-  permissionDialogTitle = "",
-  permissionDialogMessage = "",
-  strokeColor = "#000",
+  permissionDialogTitle = '',
+  permissionDialogMessage = '',
+  strokeColor = '#000',
   strokeWidth = 3,
   text: textProp = null,
   touchEnabled = true,
@@ -39,11 +39,11 @@ function SketchCanvas({
   const [paths, setPaths] = useState([]);
   const [pathsToProcess, setPathsToProcess] = useState([]);
   const [screenScale, setScreenScale] = useState(
-    Platform.select({ android: PixelRatio.get(), ios: 1 })
+    Platform.select({ android: PixelRatio.get(), ios: 1 }),
   );
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [text, setText] = useState(
-    processText(textProp ? textProp.map((t) => Object.assign({}, t)) : null)
+    processText(textProp ? textProp.map((t) => Object.assign({}, t)) : null),
   );
   const canvasRef = useRef();
 
@@ -62,7 +62,7 @@ function SketchCanvas({
       canvasRef.current,
       // $FlowFixMe
       UIManager.RNSketchCanvas.Commands.clear,
-      []
+      [],
     );
   }
 
@@ -74,7 +74,7 @@ function SketchCanvas({
   function undo() {
     let lastId = -1;
     paths.forEach(
-      (d) => (lastId = d.drawer === this.props.user ? d.path.id : lastId)
+      (d) => (lastId = d.drawer === this.props.user ? d.path.id : lastId),
     );
     if (lastId >= 0) this.deletePath(lastId);
     return lastId;
@@ -85,7 +85,7 @@ function SketchCanvas({
       if (paths.filter((p) => p.path.id === data.path.id).length === 0)
         paths.push(data);
       const pathData = data.path.data.map((p) => {
-        const coor = p.split(",").map((pp) => parseFloat(pp).toFixed(2));
+        const coor = p.split(',').map((pp) => parseFloat(pp).toFixed(2));
         return `${
           (coor[0] * screenScale * this._size.width) / data.size.width
         },${(coor[1] * screenScale * this._size.height) / data.size.height}`;
@@ -99,7 +99,7 @@ function SketchCanvas({
           processColor(data.path.color),
           data.path.width * screenScale,
           pathData,
-        ]
+        ],
       );
     } else {
       pathsToProcess.filter((p) => p.path.id === data.path.id).length === 0 &&
@@ -113,7 +113,7 @@ function SketchCanvas({
       canvasRef.current,
       // $FlowFixMe
       UIManager.RNSketchCanvas.Commands.deletePath,
-      [id]
+      [id],
     );
   }
 
@@ -124,7 +124,7 @@ function SketchCanvas({
     filename,
     includeImage,
     includeText,
-    cropToImageSize
+    cropToImageSize,
   ) {
     UIManager.dispatchViewManagerCommand(
       canvasRef.current,
@@ -138,7 +138,7 @@ function SketchCanvas({
         includeImage,
         includeText,
         cropToImageSize,
-      ]
+      ],
     );
   }
 
@@ -152,9 +152,9 @@ function SketchCanvas({
     includeImage,
     includeText,
     cropToImageSize,
-    callback
+    callback,
   ) {
-    if (Platform.OS === "ios") {
+    if (Platform.OS === 'ios') {
       SketchCanvasManager.transferToBase64(
         canvasRef,
         imageType,
@@ -162,7 +162,7 @@ function SketchCanvas({
         includeImage,
         includeText,
         cropToImageSize,
-        callback
+        callback,
       );
     } else {
       NativeModules.SketchCanvasModule.transferToBase64(
@@ -172,7 +172,7 @@ function SketchCanvas({
         includeImage,
         includeText,
         cropToImageSize,
-        callback
+        callback,
       );
     }
   }
@@ -296,14 +296,14 @@ function SketchCanvas({
       }}
       {...this.panResponder.pancanvasRefrs}
       onChange={(e) => {
-        if (e.nativeEvent.hasOwnProperty("pathsUpdate")) {
+        if (e.nativeEvent.hasOwnProperty('pathsUpdate')) {
           this.props.onPathsChange(e.nativeEvent.pathsUpdate);
         } else if (
-          e.nativeEvent.hasOwnProperty("success") &&
-          e.nativeEvent.hasOwnProperty("path")
+          e.nativeEvent.hasOwnProperty('success') &&
+          e.nativeEvent.hasOwnProperty('path')
         ) {
           this.props.onSketchSaved(e.nativeEvent.success, e.nativeEvent.path);
-        } else if (e.nativeEvent.hasOwnProperty("success")) {
+        } else if (e.nativeEvent.hasOwnProperty('success')) {
           this.props.onSketchSaved(e.nativeEvent.success);
         }
       }}
@@ -315,7 +315,7 @@ function SketchCanvas({
   );
 }
 
-if (Platform.OS == "ios") {
+if (Platform.OS == 'ios') {
   // $FlowFixMe
   SketchCanvas.MAIN_BUNDLE = UIManager.RNSketchCanvas.Constants.MainBundlePath;
   SketchCanvas.DOCUMENT =

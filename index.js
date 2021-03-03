@@ -1,26 +1,26 @@
 // @flow
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import ReactNative, {
   FlatList,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import SketchCanvas from "./src/SketchCanvas";
-import { requestPermissions } from "./src/handlePermissions";
-import { STROKE_COLORS } from "./src/constants";
-import type { RNCanvasProps as Props } from "./src/types";
+} from 'react-native';
+import SketchCanvas from './src/SketchCanvas';
+import { requestPermissions } from './src/handlePermissions';
+import { STROKE_COLORS } from './src/constants';
+import type { RNCanvasProps as Props } from './src/types';
 
 export default function RNSketchCanvas({
-  alphaValues = ["33", "77", "AA", "FF"],
+  alphaValues = ['33', '77', 'AA', 'FF'],
   defaultStrokeIndex = 0,
   defaultStrokeWidth = 3,
   localSourceImage = null,
   maxStrokeWidth = 15,
   minStrokeWidth = 3,
-  permissionDialogMessage = "",
-  permissionDialogTitle = "",
+  permissionDialogMessage = '',
+  permissionDialogTitle = '',
   savePreference = null,
   strokeColors = STROKE_COLORS,
   strokeWidthStep: strokeWidthStepProp = 3,
@@ -72,11 +72,11 @@ export default function RNSketchCanvas({
   function getFileName() {
     const date = new Date();
     return `${date.getFullYear()}-${date.getMonth() + 1}-${(
-      "0" + date.getDate()
-    ).slice(-2)} ${("0" + date.getHours()).slice(-2)}-${(
-      "0" + date.getMinutes()
+      '0' + date.getDate()
+    ).slice(-2)} ${('0' + date.getHours()).slice(-2)}-${(
+      '0' + date.getMinutes()
     ).slice(-2)}-
-${("0" + date.getSeconds()).slice(-2)}`;
+${('0' + date.getSeconds()).slice(-2)}`;
   }
 
   function save() {
@@ -85,28 +85,28 @@ ${("0" + date.getSeconds()).slice(-2)}`;
       sketchCanvasRef.current?.save(
         p.imageType,
         p.transparent,
-        p.folder ? p.folder : "",
+        p.folder ? p.folder : '',
         p.filename,
         p.includeImage !== false,
         p.includeText !== false,
-        p.cropToImageSize || false
+        p.cropToImageSize || false,
       );
     } else {
       sketchCanvasRef.current?.save(
-        "png",
+        'png',
         false,
-        "",
+        '',
         getFileName(),
         true,
         true,
-        false
+        false,
       );
     }
   }
 
   function nextStrokeWidth() {
     setStrokeWidth((prev) => {
-      const prevSize = typeof prev === "number" ? prev : 1;
+      const prevSize = typeof prev === 'number' ? prev : 1;
       const newSize =
         prevSize + strokeWidthStep >= maxStrokeWidth
           ? 1
@@ -135,8 +135,7 @@ ${("0" + date.getSeconds()).slice(-2)}`;
           setColor(item.color);
           setColorChanged(true);
         }
-      }}
-    >
+      }}>
       {color !== item.color && StrokeComponent && (
         <StrokeComponent color={item.color} />
       )}
@@ -155,7 +154,7 @@ ${("0" + date.getSeconds()).slice(-2)}`;
     if (!hasFilePermissions) {
       requestPermissions(
         permissionDialogTitle,
-        permissionDialogMessage
+        permissionDialogMessage,
       ).then((granted) => setHasFilePermissions(granted));
     }
   }, []);
@@ -166,14 +165,13 @@ ${("0" + date.getSeconds()).slice(-2)}`;
 
   return (
     <View style={containerStyle}>
-      <View style={{ flexDirection: "row" }}>
+      <View style={{ flexDirection: 'row' }}>
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: 'row',
             flex: 1,
-            justifyContent: "flex-start",
-          }}
-        >
+            justifyContent: 'flex-start',
+          }}>
           {CloseComponent && (
             <TouchableOpacity onPress={onClosePressed}>
               <CloseComponent />
@@ -181,18 +179,17 @@ ${("0" + date.getSeconds()).slice(-2)}`;
           )}
 
           {EraseComponent && (
-            <TouchableOpacity onPress={() => setColor("#00000000")}>
+            <TouchableOpacity onPress={() => setColor('#00000000')}>
               <EraseComponent />
             </TouchableOpacity>
           )}
         </View>
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: 'row',
             flex: 1,
-            justifyContent: "flex-end",
-          }}
-        >
+            justifyContent: 'flex-end',
+          }}>
           {StrokeWidthComponent && (
             <TouchableOpacity onPress={nextStrokeWidth}>
               <StrokeWidthComponent strokeWidth={strokeWidth} />
@@ -208,8 +205,7 @@ ${("0" + date.getSeconds()).slice(-2)}`;
               onPress={() => {
                 clear();
                 onClearPressed?.();
-              }}
-            >
+              }}>
               <ClearComponent />
             </TouchableOpacity>
           )}
@@ -224,7 +220,7 @@ ${("0" + date.getSeconds()).slice(-2)}`;
       <SketchCanvas
         ref={sketchCanvasRef}
         style={canvasStyle}
-        strokeColor={`${color}${color.length === 9 ? "" : alpha}`}
+        strokeColor={`${color}${color.length === 9 ? '' : alpha}`}
         onStrokeStart={onStrokeStart}
         onStrokeChanged={onStrokeChanged}
         onStrokeEnd={onStrokeEnd}
@@ -237,7 +233,7 @@ ${("0" + date.getSeconds()).slice(-2)}`;
         permissionDialogTitle={permissionDialogTitle}
         permissionDialogMessage={permissionDialogMessage}
       />
-      <View style={{ flexDirection: "row" }}>
+      <View style={{ flexDirection: 'row' }}>
         <FlatList
           data={strokeColors}
           extraData={{ alpha, color, strokeWidth }}

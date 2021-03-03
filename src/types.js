@@ -1,5 +1,5 @@
 // @flow
-type ImageType = "png" | "jpg";
+type ImageType = 'png' | 'jpg';
 
 type StrokeColor = {| color: string |};
 
@@ -11,7 +11,7 @@ type Size = {|
 type LocalSourceImage = {|
   directory?: string,
   filename?: string,
-  mode?: "AspectFill" | "AspectFit" | "ScaleToFill",
+  mode?: 'AspectFill' | 'AspectFit' | 'ScaleToFill',
 |};
 
 type Path = {|
@@ -80,13 +80,13 @@ type CanvasText = {|
   anchor: Coordinate,
   position: Coordinate,
   text: string,
-  coordinate?: "Absolute" | "Ratio",
-  alignment?: "Left" | "Center" | "Right",
+  coordinate?: 'Absolute' | 'Ratio',
+  alignment?: 'Left' | 'Center' | 'Right',
   font?: string,
   fontSize?: number,
   fontColor?: string,
   lineHeightMultiple?: number,
-  overlay?: "TextOnSketch" | "SketchOnText",
+  overlay?: 'TextOnSketch' | 'SketchOnText',
 |};
 
 export type SketchCanvasProps = {|
