@@ -132,7 +132,6 @@ function SketchCanvas({
       UIManager.RNSketchCanvas.Commands.save,
       [
         imageType,
-        folder,
         filename,
         transparent,
         includeImage,
@@ -144,37 +143,6 @@ function SketchCanvas({
 
   function getPaths() {
     return paths;
-  }
-
-  function getBase64(
-    imageType,
-    transparent,
-    includeImage,
-    includeText,
-    cropToImageSize,
-    callback,
-  ) {
-    if (Platform.OS === 'ios') {
-      SketchCanvasManager.transferToBase64(
-        canvasRef,
-        imageType,
-        transparent,
-        includeImage,
-        includeText,
-        cropToImageSize,
-        callback,
-      );
-    } else {
-      NativeModules.SketchCanvasModule.transferToBase64(
-        canvasRef,
-        imageType,
-        transparent,
-        includeImage,
-        includeText,
-        cropToImageSize,
-        callback,
-      );
-    }
   }
 
   // componentWillMount() {
